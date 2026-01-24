@@ -4,14 +4,14 @@ spring:
   application:
     name: hmdp
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/hmdp?useSSL=false&serverTimezone=UTC
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/hmdp?useSSL=false&serverTimezone=UTC
     username: root
-    password: ???
+    password: password_placeholder
   redis:
-    host: 192.168.150.101
+    host: your_server_ip
     port: 6379
-    password: ???
+    password: your_password
     lettuce:
       pool:
         max-active: 10
@@ -20,6 +20,8 @@ spring:
         time-between-eviction-runs: 10s
   jackson:
     default-property-inclusion: non_null # JSON处理时忽略非空字段
+  profiles:
+    active: local
 mybatis-plus:
   type-aliases-package: com.hmdp.entity # 别名扫描包
 logging:
