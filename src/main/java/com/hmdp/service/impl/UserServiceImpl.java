@@ -101,8 +101,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 保存数据到 Redis
         String tokenKey = LOGIN_USER_KEY + token;
         stringRedisTemplate.opsForHash().putAll(tokenKey, userMap);
-        // 设置 token 过期时间
-        stringRedisTemplate.expire(tokenKey, LOGIN_USER_TTL, TimeUnit.MINUTES);
         // 返回 token
         return Result.ok(token);
     }
