@@ -9,6 +9,7 @@ import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
 import com.hmdp.mapper.ShopMapper;
 import com.hmdp.service.IShopService;
+import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -38,6 +39,10 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    // 注入 缓存工具类
+    @Resource
+    private CacheClient cacheClient;
+
     @Override
     public Result queryById(Long id) {
         // 缓存穿透
@@ -47,7 +52,13 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         //Shop shop = queryWithMutex(id);
 
         //逻辑过期解决缓存击穿
-        Shop shop = queryWithLogicExpire(id);
+        //Shop shop = queryWithLogicExpire(id);
+
+        // 利用工具类解决缓存穿透
+        //Shop shop = cacheClient.queryWithPassThrough(CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.MINUTES);
+
+        // 利用工具类解决缓存击穿
+        Shop shop = cacheClient.queryWithLogicExpire(LOCK_SHOP_KEY ,CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.MINUTES);
 
         // 返回
         if (shop == null) {
@@ -57,7 +68,8 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         return Result.ok(shop);
     }
 
-    // 尝试获取锁
+    // 缓存击穿代码实现
+    /*// 尝试获取锁
     private boolean tryLock(String key) {
         Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(key, "1", 10, TimeUnit.SECONDS);
         // Hutool 的 isTrue 会处理 null：如果是 null，直接返回 false，避免拆箱装箱问题
@@ -74,11 +86,11 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
 
     // 将商铺数据写入 Redis
-    public void saveShop2Redis(Long id, Long expireSeconds) throws InterruptedException {
+    private void saveShop2Redis(Long id, Long expireSeconds) throws InterruptedException {
         // 查询店铺信息
         Shop shop = getById(id);
         // 模拟缓存重建的延迟
-        Thread.sleep(200);
+        Thread.sleep(2000);
         // 封装逻辑过期时间和村的数据
         RedisData<Shop> redisData = new RedisData();
         redisData.setData(shop);
@@ -186,10 +198,10 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
         // 返回
         return shop;
-    }
+    }*/
 
     // 缓存穿透的代码实现
-    public Shop queryWithPassThrough(Long id) {
+    /*public Shop queryWithPassThrough(Long id) {
         // 从 Redis 中查询商铺缓存
         String shopKey = CACHE_SHOP_KEY + id;
         String shopJson = stringRedisTemplate.opsForValue().get(shopKey);
@@ -217,8 +229,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
                 CACHE_SHOP_TTL, TimeUnit.MINUTES);
         // 返回
         return shop;
-    }
-
+    }*/
 
     @Override
     @Transactional  // 添加事务
