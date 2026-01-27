@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static com.hmdp.utils.RedisConstants.CACHE_NULL_TTL;
+import static com.hmdp.utils.RedisConstants.LOCK_SHOP_TTL;
 
 @Component
 public class CacheClient {
@@ -70,7 +71,7 @@ public class CacheClient {
 
     // 尝试获取锁
     private boolean tryLock(String key) {
-        Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(key, "1", 10, TimeUnit.SECONDS);
+        Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(key, "1", LOCK_SHOP_TTL, TimeUnit.SECONDS);
         // Hutool 的 isTrue 会处理 null：如果是 null，直接返回 false，避免拆箱装箱问题
         return BooleanUtil.isTrue(flag);
     }
