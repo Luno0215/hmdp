@@ -9,6 +9,7 @@ import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
 import com.hmdp.utils.RedisIdWorker;
 import com.hmdp.utils.UserHolder;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +34,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private RedisIdWorker redisIdWorker;
 
     @Override
-    @Transactional  // 添加事务
     public Result seckillVoucher(Long voucherId) {
         // 查询优惠卷信息
         SeckillVoucher voucher = seckillVoucherService.getById(voucherId);
@@ -55,6 +55,28 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         {
             return Result.fail("库存不足");
         }
+
+        Long userID = UserHolder.getUser().getId();
+        synchronized (userID.toString().intern()) {
+            // 获取代理对象 （事务）
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            return proxy.createVoucherOrder(voucherId);
+        }
+    }
+
+    @Transactional  // 在方法上添加事务
+    public Result createVoucherOrder(Long voucherId) {
+        // 一人一单
+        Long userID = UserHolder.getUser().getId();
+        // 查询订单
+        // 判断是否存在
+        Long count = query().eq("user_id", userID).eq("voucher_id", voucherId).count();
+        if(count > 0)
+        {
+            // 用户已经购买过
+            return Result.fail("用户已经购买过");
+        }
+
         // 扣减库存
         boolean success = seckillVoucherService.update()
                 .setSql("stock = stock - 1")    // set stock = stock - 1    // where voucher_id = ? and stock > 0
@@ -71,7 +93,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         Long orderId = redisIdWorker.nextId("order");
         voucherOrder.setId(orderId);
         // 用户ID
-        Long userID = UserHolder.getUser().getId();
         voucherOrder.setUserId(userID);
         // 代金券ID
         voucherOrder.setVoucherId(voucherId);
