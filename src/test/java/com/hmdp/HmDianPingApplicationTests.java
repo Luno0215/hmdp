@@ -85,4 +85,32 @@ public class HmDianPingApplicationTests {
             stringRedisTemplate.opsForGeo().add(key, locations);
         }
     }
+
+    @Test
+    void testHyperLogLog() {
+        String key = "hl1";
+        String[] values = new String[1000];
+
+        // 1. 考虑预先清理旧数据，保证测试准确性
+        stringRedisTemplate.delete(key);
+
+        for (int i = 0; i < 1000000; i++) {
+            // 使用简单的索引计算
+            int j = i % 1000;
+            values[j] = "user_" + i;
+
+            if (j == 999) {
+                // 批量添加
+                stringRedisTemplate.opsForHyperLogLog().add(key, values);
+            }
+        }
+
+        Long count = stringRedisTemplate.opsForHyperLogLog().size(key);
+        System.out.println("实际输入：1000000");
+        System.out.println("HLL统计结果：count = " + count);
+
+        // 计算误差率
+        double error = Math.abs(count - 1000000) / 1000000.0;
+        System.out.printf("误差率：%.2f%%\n", error * 100);
+    }
 }
