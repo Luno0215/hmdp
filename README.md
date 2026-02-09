@@ -9,8 +9,8 @@
 2. 在本地创建项目文件夹hmdp存放前端后端项目代码
 3. 用 hmdp 位置右键用终端打开，输入命令：`git clone -b init https://github.com/cs001020/hmdp.git`  克隆项目资源
 
-4. 使用IDEA连接上`本地 mysql`数据库，新建名为hmdp的schema，并右键hmdp，选择SQL Scripts，在选择Run SQL Script...
-5. `Redis` 我**在云服务器上** **用 Docker 部署**，先去阿里云放行 `6379` 端口（在本地也可以）
+4. 使用IDEA连接上`本地 mysql`数据库，新建名为hmdp的schema，并右键hmdp，选择SQL Scripts，再选择Run SQL Script...
+5. `Redis` 我**在云服务器上** **用 Docker 部署**，先去阿里云放行 `6379` 端口（**这里还是推荐在本地 Redis 操作，我是为了练习 Docker**）
 
 6. 执行 `docker pull redis:6.2` 拉取 **Redis 镜像**，然后使用 `docker images` 查看拉取是否成功
 
